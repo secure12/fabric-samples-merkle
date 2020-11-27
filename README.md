@@ -2,6 +2,13 @@
 
 Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
 
+0. Pull the relevant docker images:
+    ```
+    docker pull hyperledger/fabric-orderer
+    docker pull hyperledger/fabric-peer
+    docker pull hyperledger/fabric-ca
+    ```
+
 1. Pull this project and set up environment variable:
     ```
     git clone https://github.com/secure12/fabric-samples-merkle.git
