@@ -58,28 +58,28 @@ const org1UserId = 'appUser';
 //
 
 async function main(N) {
-	try {
-		// build an in memory object with the network configuration (also known as a connection profile)
-		const ccp = buildCCPOrg1();
+    try {
+        // build an in memory object with the network configuration (also known as a connection profile)
+        const ccp = buildCCPOrg1();
 
-		// build an instance of the fabric ca services client based on
-		// the information in the network configuration
-		const caClient = buildCAClient(FabricCAServices, ccp, 'ca.org1.example.com');
+        // build an instance of the fabric ca services client based on
+        // the information in the network configuration
+        const caClient = buildCAClient(FabricCAServices, ccp, 'ca.org1.example.com');
 
-		// setup the wallet to hold the credentials of the application user
-		const wallet = await buildWallet(Wallets, walletPath);
+        // setup the wallet to hold the credentials of the application user
+        const wallet = await buildWallet(Wallets, walletPath);
 
-		// in a real application this would be done on an administrative flow, and only once
-		await enrollAdmin(caClient, wallet, mspOrg1);
+        // in a real application this would be done on an administrative flow, and only once
+        await enrollAdmin(caClient, wallet, mspOrg1);
 
-		// in a real application this would be done only when a new user was required to be added
-		// and would be part of an administrative flow
-		await registerAndEnrollUser(caClient, wallet, mspOrg1, org1UserId, 'org1.department1');
+        // in a real application this would be done only when a new user was required to be added
+        // and would be part of an administrative flow
+        await registerAndEnrollUser(caClient, wallet, mspOrg1, org1UserId, 'org1.department1');
 
-		// Create a new gateway instance for interacting with the fabric network.
-		// In a real application this would be done as the backend server session is setup for
-		// a user that has been verified.
-		const gateway = new Gateway();
+        // Create a new gateway instance for interacting with the fabric network.
+        // In a real application this would be done as the backend server session is setup for
+        // a user that has been verified.
+        const gateway = new Gateway();
 
         // setup the gateway instance
         // The user will now be able to create connections to the fabric network and be able to
@@ -109,10 +109,10 @@ async function main(N) {
             gateway.disconnect();
             process.exit(1);
         });
-	} catch (error) {
-		console.error(`******** FAILED to run the application: ${error}`);
+    } catch (error) {
+        console.error(`******** FAILED to run the application: ${error}`);
         console.error(error.stack);
-	}
+    }
 }
 
 const argv = process.argv
