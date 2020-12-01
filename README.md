@@ -7,28 +7,29 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     git clone https://github.com/secure12/fabric-samples-merkle.git
     export PATH=$PATH:/path/to/fabric-samples-merkle/bin/
     ```
-2. Bring up network and deploy chaincode:
+2. Bring up network:
     ```
     cd fabric-samples-merkle/test-network/
     ./network.sh up
     ```
     Run `docker ps` to see running containers. There should be six new containers running: `orderer.example.com`,  `peer0.org1.example.com`,  `peer0.org2.example.com`, `ca_orderer`, `ca_org1` and `ca_org2`.
+3. Deploy chaincode:
     ```
     ./network.sh deployCC
     ```
     There should be two more chaincode containers `dev-peer0.org1.example.com-merkle...` and `dev-peer0.org2.example.com-merkle...`.
-3. Install and use later version of node.js if version less than `v10.10.0`. I personally used `v14.15.1`.
+4. Install and use later version of node.js if version less than `v10.10.0`. I personally used `v14.15.1`.
     ```
     node -v # (check node.js version in use)
     nvm install 14
     nvm use 14
     ```
-4. Install node.js dependencies for application:
+5. Install node.js dependencies for application:
     ```
     cd ../merkle/application-javascript/
     npm install
     ```
-5. Run the application (require two terminals):
+6. Run the application (require two terminals):
 * With first terminal:
     ```
     cd /path/to/merkle/application-javascript/
@@ -40,7 +41,7 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     nvm use 14
     node add.js 10 # (add 10 arbitrary transactions to the ledger)
     ```
-6. On the first terminal, there should be some transactions for the i-th block and a root for their merkle tree tree_i. For example:
+7. On the first terminal, there should be some transactions for the i-th block and a root for their merkle tree tree_i. For example:
     ```
     ****************************************
     ***                                  ***
@@ -75,12 +76,12 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     Verification Result:
     true
     ```
-7. To restart the network (re-installed chaincode):
+8. To restart the network (clear ledger and re-install chaincode):
     ```
     cd ../../test-network/
     ./network.sh restart
     ./network.sh deployCC
     ```
-8. To stop the network:
+9. To stop the network:
     ```
     ./network.sh down
