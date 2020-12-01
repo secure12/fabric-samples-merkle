@@ -70,6 +70,11 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     6 \ # the block number
     ce2b4b73d113e17c93bed12e380680c526888096d3660c679e0a349271e71d13 # the root of the Merkle tree
     ```
+    This gives us the verication result:
+    ```
+    Verification Result:
+    true
+    ```
 7. To restart the network (re-installed chaincode):
     ```
     cd ../../test-network/
