@@ -109,6 +109,7 @@ async function main() {
                 var i;
                 for (i = 0; i < txs.length; i++) {
                     const func = txs[i].transactionData.actions[0].payload.chaincode_proposal_payload.input.chaincode_spec.input.args[0].toString();
+
                     if (func === "Put") {
                         tx_array.push(txs[i].transactionId)
                     }
@@ -133,10 +134,13 @@ async function main() {
                         console.log(tx_array[i]);
                     }
                     console.log();
-                    console.log('putting merkle tree (tree_' + index + ') to ledger');
+                    console.log('putting merkle tree (tree_' + index + ') to ledger...');
                     // not sure if stringify is necessary, but otherwise it panics
-                    await contract.submitTransaction('BuildMerkleTree', JSON.stringify(tx_array), index);
-                    console.log('run get.js to query Merkle trees');
+                    let result = await contract.submitTransaction('BuildMerkleTree', JSON.stringify(tx_array), index);
+                    var r;
+                    console.log('tree_' + index + ' root:');
+                    console.log(result.toString('hex'));
+                    //console.log('run get.js to query Merkle trees');
                 }
                 console.log();
                 console.log('Waiting for next block...');
@@ -144,14 +148,12 @@ async function main() {
                 console.log('----------------------------------------');
                 console.log();
             };
-            /*
-            const options = {
-                startBlock: 1
-            };
-            */
+            //const options = {
+            //    type: "filtered"
+            //};
 
             // keeps on listening - no await
-            network.addBlockListener(listener);
+            network.addBlockListener(listener);//, options);
         } finally {
             // Disconnect from the gateway when the application is closing
             // This will close all connections to the network

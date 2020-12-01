@@ -23,33 +23,54 @@ type MerkleTree struct {
 	Layers [][][32]byte `json:"layers"`
 }
 
+type MerkleTreeProof struct {
+	Index    int        `json:"index"`
+	Siblings [][32]byte `json:"siblings"`
+}
+
 func (s *SmartContract) Log(ctx contractapi.TransactionContextInterface) error {
 	fmt.Println("************************ Println OK ************************")
 	return errors.New("************************ Errors OK ************************")
 }
 
-func (s *SmartContract) BuildMerkleTree(ctx contractapi.TransactionContextInterface, txArrayStr string, index int) error {
+func (s *SmartContract) GetMerkleRoot(ctx contractapi.TransactionContextInterface, index int) (string, error) {
+	merkleTreeBytes, err := ctx.GetStub().GetState(fmt.Sprintf("tree_%d", index))
+	if err != nil {
+		return "", fmt.Errorf("failed to get tree: %v", err)
+	}
+
+	var merkleTree MerkleTree
+	err = json.Unmarshal(merkleTreeBytes, &merkleTree)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal merkle tree: %v", err)
+	}
+
+	height := len(merkleTree.Layers)
+	return string(merkleTree.Layers[height-1][0][:]), nil
+}
+
+func (s *SmartContract) BuildMerkleTree(ctx contractapi.TransactionContextInterface, txArrayStr string, index int) (string, error) {
 
 	fmt.Println("BuildMerkleTree function called with inputs:")
 	fmt.Println(txArrayStr)
 	fmt.Println(index)
 
-	testByte, err := ctx.GetStub().GetState(fmt.Sprintf("tree_%d", index))
+	testBytes, err := ctx.GetStub().GetState(fmt.Sprintf("tree_%d", index))
 	if err != nil {
-		return fmt.Errorf("failed to get tree bytes when testing if it existed: %v", err)
+		return "", fmt.Errorf("failed to get tree bytes when testing if it existed: %v", err)
 	}
-	if len(testByte) != 0 {
-		return errors.New("Merkle tree already exists.")
+	if len(testBytes) != 0 {
+		return "", errors.New("Merkle tree already exists.")
 	}
 
 	var txArray []string
 	err = json.Unmarshal([]byte(txArrayStr), &txArray)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal tx array: %v", err)
+		return "", fmt.Errorf("failed to unmarshal tx array: %v", err)
 	}
 
 	if len(txArray) == 0 {
-		return errors.New("Error: Input array to BuildMerkleTree is empty.")
+		return "", errors.New("Error: Input array to BuildMerkleTree is empty.")
 	}
 
 	fmt.Printf("Number of leaves: %d\n", len(txArray))
@@ -104,7 +125,7 @@ func (s *SmartContract) BuildMerkleTree(ctx contractapi.TransactionContextInterf
 	// convert to bytes
 	merkleTreeBytes, err := json.Marshal(merkleTree)
 	if err != nil {
-		return fmt.Errorf("failed to marshal merkle tree: %v", err)
+		return "", fmt.Errorf("failed to marshal merkle tree: %v", err)
 	}
 
 	fmt.Println("printing merkle tree:")
@@ -112,10 +133,73 @@ func (s *SmartContract) BuildMerkleTree(ctx contractapi.TransactionContextInterf
 
 	err = ctx.GetStub().PutState(fmt.Sprintf("tree_%d", index), merkleTreeBytes)
 	if err != nil {
-		return fmt.Errorf("failed to put merkle tree: %v", err)
+		return "", fmt.Errorf("failed to put merkle tree: %v", err)
 	}
 
-	return nil
+	fmt.Println(len(layers[len(layers)-1][0][:]))
+	fmt.Println(len(string(layers[len(layers)-1][0][:])))
+	return string(layers[len(layers)-1][0][:]), nil
+}
+
+func (s *SmartContract) GetMerkleProof(ctx contractapi.TransactionContextInterface, tx string, index int) (string, error) {
+	merkleTreeBytes, err := ctx.GetStub().GetState(fmt.Sprintf("tree_%d", index))
+	if err != nil {
+		return "", fmt.Errorf("failed to get merkle tree bytes: %v", err)
+	}
+
+	var merkleTree MerkleTree
+	err = json.Unmarshal(merkleTreeBytes, &merkleTree)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal merkle tree: %v", err)
+	}
+
+	// check if the tx's membership and find its index
+	exists := false
+	var txIndex int
+	for i, leaf := range merkleTree.Leaves {
+		if leaf == tx {
+			txIndex = i
+			exists = true
+			break
+		}
+	}
+
+	if !exists {
+		return "", errors.New("transaction does not exist.")
+	}
+
+	siblingIndex := txIndex
+	var siblings [][32]byte
+	for _, layer := range merkleTree.Layers {
+		// skip the root node
+		if len(layer) == 1 {
+			break
+		}
+		switch {
+		// node is on the right
+		case siblingIndex&1 == 1:
+			siblingIndex -= 1
+		// node is on the left but it is the right-most
+		case siblingIndex == len(layer)-1:
+			break
+		default:
+			siblingIndex += 1
+		}
+		siblings = append(siblings, layer[siblingIndex])
+		siblingIndex >>= 1
+	}
+
+	proof := MerkleTreeProof{
+		Index:    txIndex,
+		Siblings: siblings,
+	}
+
+	proofBytes, err := json.Marshal(proof)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal proof: %v", err)
+	}
+
+	return string(proofBytes), nil
 }
 
 func (s *SmartContract) Put(ctx contractapi.TransactionContextInterface, key string, val string) error {

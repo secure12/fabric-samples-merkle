@@ -17,8 +17,8 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
 2. Bring up network and deploy chaincode:
     ```
     cd fabric-samples-merkle/test-network/
-    ./network.sh up createChannel -ca
-    ./network.sh deployCC -ccn merkle
+    ./network.sh up
+    ./network.sh deployCC
     ```
 3. Install nodejs dependencies:
     ```
@@ -30,7 +30,11 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     ```
     node app.js # (with first terminal)
     node add.js # (with second terminal)
-    node get.js tree_6
+    node proof.js ef83bee8a4bd6522b2f30b3717c4b4059073819cb9ffe2124d2f2287012ccd12 20 0659760414f4681aebd578cd0b2e717f36009e8f487541c7f8a46b0386081b4c # (check that block 20 with root 0659... contains transaction id ef83...)
     ```
-
-A merkle tree should be printed out as expected.
+5. To restart the network:
+    ```
+    cd ../../test-network/
+    ./network.sh restart
+    ./network.sh deployCC
+    ```

@@ -178,7 +178,6 @@ function createOrgs() {
 
   # Create crypto material using Fabric CAs
   if [ "$CRYPTO" == "Certificate Authorities" ]; then
-
     infoln "Generate certificates using Fabric CA's"
 
     IMAGE_TAG=${CA_IMAGETAG} docker-compose -f $COMPOSE_FILE_CA up -d 2>&1
@@ -281,6 +280,10 @@ function networkUp() {
     COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_COUCH}"
   fi
 
+  if [ "${MODE}" == "restart" ]; then
+    IMAGE_TAG=${CA_IMAGETAG} docker-compose -f $COMPOSE_FILE_CA up -d 2>&1
+  fi
+
   IMAGE_TAG=$IMAGETAG docker-compose ${COMPOSE_FILES} up -d 2>&1
 
   docker ps -a
@@ -331,6 +334,7 @@ function networkDown() {
   docker-compose -f $COMPOSE_FILE_COUCH_ORG3 -f $COMPOSE_FILE_ORG3 down --volumes --remove-orphans
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   if [ "$MODE" != "restart" ]; then
+    rm -rf ../merkle/application-javascript/wallet
     # Bring down the network, deleting the volumes
     #Cleanup the chaincode containers
     clearContainers
@@ -353,7 +357,9 @@ function networkDown() {
 # native binaries for your platform, e.g., darwin-amd64 or linux-amd64
 OS_ARCH=$(echo "$(uname -s | tr '[:upper:]' '[:lower:]' | sed 's/mingw64_nt.*/windows/')-$(uname -m | sed 's/x86_64/amd64/g')" | awk '{print tolower($0)}')
 # Using crpto vs CA. default is cryptogen
-CRYPTO="cryptogen"
+CRYPTO="Certificate Authorities"
+#CRYPTO="cryptogen"
+
 # timeout duration - the duration the CLI should wait for a response from
 # another container before giving up
 MAX_RETRY=5
@@ -362,7 +368,8 @@ CLI_DELAY=3
 # channel name defaults to "mychannel"
 CHANNEL_NAME="mychannel"
 # chaincode name defaults to "basic"
-CC_NAME="basic"
+CC_NAME="merkle"
+#CC_NAME="basic"
 # chaincode path defaults to "NA"
 CC_SRC_PATH="NA"
 # endorsement policy defaults to "NA". This would allow chaincodes to use the majority default policy.
@@ -522,12 +529,15 @@ fi
 
 if [ "${MODE}" == "up" ]; then
   networkUp
-elif [ "${MODE}" == "createChannel" ]; then
   createChannel
 elif [ "${MODE}" == "deployCC" ]; then
   deployCC
 elif [ "${MODE}" == "down" ]; then
   networkDown
+elif [ "${MODE}" == "restart" ]; then
+  networkDown
+  networkUp
+  createChannel
 else
   printHelp
   exit 1

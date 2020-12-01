@@ -11,6 +11,7 @@ const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('../../test-application/javascript/CAUtil.js');
 const { buildCCPOrg1, buildWallet } = require('../../test-application/javascript/AppUtil.js');
+const sha256 = require('js-sha256');
 
 const channelName = 'mychannel';
 const chaincodeName = 'merkle';
@@ -18,8 +19,11 @@ const mspOrg1 = 'Org1MSP';
 const walletPath = path.join(__dirname, 'wallet');
 const org1UserId = 'appUser';
 
-function prettyJSONString(inputString) {
-    return JSON.stringify(JSON.parse(inputString), null, 2);
+function byteNumberArrayToHexString(arr) {
+    return arr.map(b => {
+        var s = b.toString(16);
+        return ((s.length == 1) ? '0' : '') + s;
+    }).join('');
 }
 
 // NOTE: If you see  kind an error like these:
@@ -40,7 +44,7 @@ function prettyJSONString(inputString) {
 // with the new certificate authority.
 //
 
-async function main(Key) {
+async function main(tx, treeID, root) {
     try {
         // build an in memory object with the network configuration (also known as a connection profile)
         const ccp = buildCCPOrg1();
@@ -78,36 +82,44 @@ async function main(Key) {
             // Build a network instance based on the channel where the smart contract is deployed
             const network = await gateway.getNetwork(channelName);
             const contract = network.getContract(chaincodeName);
-            let result = await contract.evaluateTransaction('Get', Key);
+            let result = await contract.evaluateTransaction('GetMerkleProof', tx, treeID);
             console.log();
             console.log("Query Result:");
-            if (Key.startsWith('tree_') ) {
-                let tree = JSON.parse(result.toString());
-                console.log();
-                console.log("leaves:");
-                var i;
-                for (i = 0; i < tree.leaves.length; i++) {
-                    console.log(tree.leaves[i]);
-                }
-                console.log();
-                for (i = 0; i < tree.layers.length; i++) {
-                    console.log("layer at height " + i + ":");
-                    const layer = tree.layers[i];
-                    var j;
-                    for (j = 0; j < layer.length; j++) {
-                        console.log(layer[j].map(b => {
-                            var s = b.toString(16);
-                            return (s.length == '1' ? '0' : '') + s;
-                        }).join(''));
-                    }
-                    console.log()
-                }
-                console.log();
+
+            const proof = JSON.parse(result.toString());
+            console.log("{");
+            console.log("  index: "+ proof.index +",");
+            console.log("  siblings: [");
+            var i;
+            for (i = 0; i < proof.siblings.length; i++) {
+                console.log("    " + byteNumberArrayToHexString(proof.siblings[i]) + ((i === proof.siblings.length-1)?'':','));
             }
-            else {
-                console.log(result.toString());
+            console.log("  ]");
+            console.log("}");
+            console.log();
+
+            var index = proof.index;
+            var hash = sha256.array(tx);
+            console.log("Transaction's hash:");
+            console.log(byteNumberArrayToHexString(hash));
+            for (i = 0; i < proof.siblings.length; i++) {
+                console.log();
+                console.log("Hashing at height "+i+".");
+                if ((index & 1) == 0) {
+                    console.log("Padding sibling on right.");
+                    hash = sha256.array(hash.concat(proof.siblings[i]));
+                } else {
+                    console.log("Padding sibling on left.");
+                    hash = sha256.array(proof.siblings[i].concat(hash));
+                }
+                console.log("New hash:");
+                console.log(byteNumberArrayToHexString(hash));
+                index >>= 1;
             }
 
+            console.log();
+            console.log("Verification Result:");
+            console.log(byteNumberArrayToHexString(hash) === root);
         } finally {
             // Disconnect from the gateway when the application is closing
             // This will close all connections to the network
@@ -121,10 +133,10 @@ async function main(Key) {
 
 const argv = process.argv.slice(2);
 
-if (argv.length != 0) {
-    main(argv[0]);
+if (argv.length < 3) {
+    console.log("usage:   node verify.js <txID> <tree-index> <root-hash>");
+    console.log("example: node verify.js 0c62...3831 14 147c...8875");
 }
 else {
-    console.log("usage:   node get.js <querying-key>");
-    console.log("example: node get.js tree_10");
+    main(argv[0], argv[1], argv[2]);
 }
