@@ -12,7 +12,7 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     cd fabric-samples-merkle/test-network/
     ./network.sh up
     ```
-    There should be six new containers running: `orderer.example.com`,  `peer0.org1.example.com`,  `peer0.org2.example.com`, `ca_orderer`, `ca_org1`, `ca_org2`. (Run `docker ps` to see running containers).
+    Run `docker ps` to see running containers. There should be six new containers running: `orderer.example.com`,  `peer0.org1.example.com`,  `peer0.org2.example.com`, `ca_orderer`, `ca_org1` and `ca_org2`.
     ```
     ./network.sh deployCC
     ```
@@ -37,7 +37,7 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
 * With second terminal:
     ```
     cd /path/to/merkle/application-javascript/
-    nvm use 14 # (a different terminal may use different node versions)
+    nvm use 14
     node add.js 10 # (add 10 arbitrary transactions to the ledger)
     ```
 6. On the first terminal, there should be some transactions for the i-th block and a root for their merkle tree tree_i. For example:
