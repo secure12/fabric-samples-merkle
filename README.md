@@ -70,7 +70,7 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     tree_6 root:
     ce2b4b73d113e17c93bed12e380680c526888096d3660c679e0a349271e71d13
     ```
-    We can verify the membership of a transaction ID with `proof.js`:
+    On the second terminal, we can verify the membership of a transaction ID with `proof.js`:
     ```
     node proof.js \
     09b5fe4179465850b5453dc44f928734a975d443aa743da72a290eb31880fe19 \ # a transaction ID
