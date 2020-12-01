@@ -30,7 +30,7 @@ Prereqs: git, docker, docker-compose, go, nodejs, make, g++, python/python3
     ```
     node app.js # (with first terminal)
     node add.js # (with second terminal)
-    node proof.js ef83bee8a4bd6522b2f30b3717c4b4059073819cb9ffe2124d2f2287012ccd12 20 0659760414f4681aebd578cd0b2e717f36009e8f487541c7f8a46b0386081b4c # (check that block 20 with root 0659... contains transaction id ef83...)
+    node proof.js ef83... 20 0659... # (check that block 20 with root 0659... contains transaction id ef83...)
     ```
 5. To restart the network:
     ```
